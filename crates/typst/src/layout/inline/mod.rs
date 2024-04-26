@@ -418,8 +418,9 @@ fn collect<'a>(
     let mut iter = children.iter().peekable();
 
     let first_line_indent = ParElem::first_line_indent_in(*styles);
+    let always_indent_first_line = ParElem::always_indent_first_line_in(*styles);
     if !first_line_indent.is_zero()
-        && consecutive
+        && (consecutive || always_indent_first_line)
         && AlignElem::alignment_in(*styles).resolve(*styles).x
             == TextElem::dir_in(*styles).start().into()
     {
