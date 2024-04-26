@@ -91,6 +91,11 @@ pub struct ParElem {
     #[ghost]
     pub first_line_indent: Length,
 
+    /// Whether or not the first line is always intented, or only when it is a consecutive paragraph
+    #[ghost]
+    #[default(false)]
+    pub always_indent_first_line: bool,
+
     /// The indent all but the first line of a paragraph should have.
     #[ghost]
     #[resolve]
