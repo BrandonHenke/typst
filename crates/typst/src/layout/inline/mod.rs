@@ -116,6 +116,7 @@ struct Preparation<'a> {
 	spans: SpanMapper,
 	/// Whether to hyphenate if it's the same for all children.
 	hyphenate: Option<bool>,
+	costs: crate::text::Costs,
 	/// The text language if it's the same for all children.
 	lang: Option<Lang>,
 	/// The paragraph's resolved horizontal alignment.
@@ -613,19 +614,22 @@ fn prepare<'a>(
 		add_cjk_latin_spacing(&mut items);
 	}
 
+	let costs = TextElem::costs_in(styles);
+
 	Ok(Preparation {
 		bidi,
 		items,
 		spans,
 		hyphenate: shared_get(styles, children, TextElem::hyphenate_in),
+		costs,
 		lang: shared_get(styles, children, TextElem::lang_in),
 		align: AlignElem::alignment_in(styles).resolve(styles).x,
-		justify: InlineElem::justify_in(styles),
-		hang: InlineElem::hanging_indent_in(styles),
+		justify: ParElem::justify_in(styles),
+		hang: ParElem::hanging_indent_in(styles),
 		cjk_latin_spacing,
 		fallback: TextElem::fallback_in(styles),
-		leading: InlineElem::leading_in(styles),
-		linebreaks: InlineElem::linebreaks_in(styles),
+		leading: ParElem::leading_in(styles),
+		linebreaks: ParElem::linebreaks_in(styles),
 		size: TextElem::size_in(styles),
 	})
 }
@@ -859,11 +863,14 @@ fn linebreak_optimized<'a>(
 	}
 
 	// Cost parameters.
-	const HYPH_COST: Cost = 0.5;
-	const RUNT_COST: Cost = 0.5;
+	const DEFAULT_HYPH_COST: Cost = 0.5;
+	const DEFAULT_RUNT_COST: Cost = 0.5;
 	const CONSECUTIVE_DASH_COST: Cost = 0.3;
 	const MAX_COST: Cost = 1_000_000.0;
 	const MIN_RATIO: f64 = -1.0;
+
+	let hyph_cost = DEFAULT_HYPH_COST * p.costs.hyphenation().get();
+	let runt_cost = DEFAULT_RUNT_COST * p.costs.runt().get();
 
 	// Dynamic programming table.
 	let mut active = 0;
@@ -948,12 +955,12 @@ fn linebreak_optimized<'a>(
 
 			// Penalize runts.
 			if k == i + 1 && is_end {
-				cost += RUNT_COST;
+				cost += runt_cost;
 			}
 
 			// Penalize hyphens.
 			if breakpoint == Breakpoint::Hyphen {
-				cost += HYPH_COST;
+				cost += hyph_cost;
 			}
 
 			// In Knuth paper, cost = (1 + 100|r|^3 + p)^2 + a,
@@ -1195,19 +1202,23 @@ fn finalize(
 		.map(|line| commit(engine, p, line, width, region.y, shrink))
 		.collect::<SourceResult<_>>()?;
 
-	// Prevent orphans.
-	if frames.len() >= 2 && !frames[1].is_empty() {
-		let second = frames.remove(1);
-		let first = &mut frames[0];
-		merge(first, second, p.leading);
+	// Positive ratios enable prevention, while zero and negative ratios disable it.
+	if p.costs.orphan().get() > 0.0 {
+		// Prevent orphans.
+		if frames.len() >= 2 && !frames[1].is_empty() {
+			let second = frames.remove(1);
+			let first = &mut frames[0];
+			merge(first, second, p.leading);
+		}
 	}
-
-	// Prevent widows.
-	let len = frames.len();
-	if len >= 2 && !frames[len - 2].is_empty() {
-		let second = frames.pop().unwrap();
-		let first = frames.last_mut().unwrap();
-		merge(first, second, p.leading);
+	if p.costs.widow().get() > 0.0 {
+		// Prevent widows.
+		let len = frames.len();
+		if len >= 2 && !frames[len - 2].is_empty() {
+			let second = frames.pop().unwrap();
+			let first = frames.last_mut().unwrap();
+			merge(first, second, p.leading);
+		}
 	}
 
 	Ok(Fragment::frames(frames))
