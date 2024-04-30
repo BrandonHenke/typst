@@ -88,187 +88,187 @@ pub static LAYOUT: Category;
 
 /// Hook up all `layout` definitions.
 pub fn define(global: &mut Scope) {
-    global.category(LAYOUT);
-    global.define_type::<Length>();
-    global.define_type::<Angle>();
-    global.define_type::<Ratio>();
-    global.define_type::<Rel<Length>>();
-    global.define_type::<Fr>();
-    global.define_type::<Dir>();
-    global.define_type::<Alignment>();
-    global.define_elem::<PageElem>();
-    global.define_elem::<PagebreakElem>();
-    global.define_elem::<VElem>();
-    global.define_elem::<HElem>();
-    global.define_elem::<BoxElem>();
-    global.define_elem::<BlockElem>();
-    global.define_elem::<StackElem>();
-    global.define_elem::<GridElem>();
-    global.define_elem::<ColumnsElem>();
-    global.define_elem::<ColbreakElem>();
-    global.define_elem::<PlaceElem>();
-    global.define_elem::<AlignElem>();
-    global.define_elem::<PadElem>();
-    global.define_elem::<RepeatElem>();
-    global.define_elem::<MoveElem>();
-    global.define_elem::<ScaleElem>();
-    global.define_elem::<RotateElem>();
-    global.define_elem::<HideElem>();
-    global.define_func::<measure>();
-    global.define_func::<layout>();
+	global.category(LAYOUT);
+	global.define_type::<Length>();
+	global.define_type::<Angle>();
+	global.define_type::<Ratio>();
+	global.define_type::<Rel<Length>>();
+	global.define_type::<Fr>();
+	global.define_type::<Dir>();
+	global.define_type::<Alignment>();
+	global.define_elem::<PageElem>();
+	global.define_elem::<PagebreakElem>();
+	global.define_elem::<VElem>();
+	global.define_elem::<HElem>();
+	global.define_elem::<BoxElem>();
+	global.define_elem::<BlockElem>();
+	global.define_elem::<StackElem>();
+	global.define_elem::<GridElem>();
+	global.define_elem::<ColumnsElem>();
+	global.define_elem::<ColbreakElem>();
+	global.define_elem::<PlaceElem>();
+	global.define_elem::<AlignElem>();
+	global.define_elem::<PadElem>();
+	global.define_elem::<RepeatElem>();
+	global.define_elem::<MoveElem>();
+	global.define_elem::<ScaleElem>();
+	global.define_elem::<RotateElem>();
+	global.define_elem::<HideElem>();
+	global.define_func::<measure>();
+	global.define_func::<layout>();
 }
 
 /// Root-level layout.
 pub trait LayoutRoot {
-    /// Layout into a document with one frame per page.
-    fn layout_root(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-    ) -> SourceResult<Document>;
+	/// Layout into a document with one frame per page.
+	fn layout_root(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+	) -> SourceResult<Document>;
 }
 
 /// Layout into multiple regions.
 pub trait LayoutMultiple {
-    /// Layout into one frame per region.
-    fn layout(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-        regions: Regions,
-    ) -> SourceResult<Fragment>;
+	/// Layout into one frame per region.
+	fn layout(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+		regions: Regions,
+	) -> SourceResult<Fragment>;
 
-    /// Layout without side effects.
-    ///
-    /// This element must be layouted again in the same order for the results to
-    /// be valid.
-    fn measure(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-        regions: Regions,
-    ) -> SourceResult<Fragment> {
-        let mut locator = Locator::chained(engine.locator.track());
-        let mut engine = Engine {
-            world: engine.world,
-            route: engine.route.clone(),
-            introspector: engine.introspector,
-            locator: &mut locator,
-            tracer: TrackedMut::reborrow_mut(&mut engine.tracer),
-        };
-        self.layout(&mut engine, styles, regions)
-    }
+	/// Layout without side effects.
+	///
+	/// This element must be layouted again in the same order for the results to
+	/// be valid.
+	fn measure(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+		regions: Regions,
+	) -> SourceResult<Fragment> {
+		let mut locator = Locator::chained(engine.locator.track());
+		let mut engine = Engine {
+			world: engine.world,
+			route: engine.route.clone(),
+			introspector: engine.introspector,
+			locator: &mut locator,
+			tracer: TrackedMut::reborrow_mut(&mut engine.tracer),
+		};
+		self.layout(&mut engine, styles, regions)
+	}
 }
 
 /// Layout into a single region.
 pub trait LayoutSingle {
-    /// Layout into one frame per region.
-    fn layout(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-        regions: Regions,
-    ) -> SourceResult<Frame>;
+	/// Layout into one frame per region.
+	fn layout(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+		regions: Regions,
+	) -> SourceResult<Frame>;
 }
 
 impl LayoutRoot for Content {
-    fn layout_root(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-    ) -> SourceResult<Document> {
-        #[comemo::memoize]
-        fn cached(
-            content: &Content,
-            world: Tracked<dyn World + '_>,
-            introspector: Tracked<Introspector>,
-            route: Tracked<Route>,
-            locator: Tracked<Locator>,
-            tracer: TrackedMut<Tracer>,
-            styles: StyleChain,
-        ) -> SourceResult<Document> {
-            let mut locator = Locator::chained(locator);
-            let mut engine = Engine {
-                world,
-                introspector,
-                route: Route::extend(route).unnested(),
-                locator: &mut locator,
-                tracer,
-            };
-            let arenas = Arenas::default();
-            let (document, styles) = realize_root(&mut engine, &arenas, content, styles)?;
-            document.layout_root(&mut engine, styles)
-        }
+	fn layout_root(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+	) -> SourceResult<Document> {
+		#[comemo::memoize]
+		fn cached(
+			content: &Content,
+			world: Tracked<dyn World + '_>,
+			introspector: Tracked<Introspector>,
+			route: Tracked<Route>,
+			locator: Tracked<Locator>,
+			tracer: TrackedMut<Tracer>,
+			styles: StyleChain,
+		) -> SourceResult<Document> {
+			let mut locator = Locator::chained(locator);
+			let mut engine = Engine {
+				world,
+				introspector,
+				route: Route::extend(route).unnested(),
+				locator: &mut locator,
+				tracer,
+			};
+			let arenas = Arenas::default();
+			let (document, styles) = realize_root(&mut engine, &arenas, content, styles)?;
+			document.layout_root(&mut engine, styles)
+		}
 
-        cached(
-            self,
-            engine.world,
-            engine.introspector,
-            engine.route.track(),
-            engine.locator.track(),
-            TrackedMut::reborrow_mut(&mut engine.tracer),
-            styles,
-        )
-    }
+		cached(
+			self,
+			engine.world,
+			engine.introspector,
+			engine.route.track(),
+			engine.locator.track(),
+			TrackedMut::reborrow_mut(&mut engine.tracer),
+			styles,
+		)
+	}
 }
 
 impl LayoutMultiple for Content {
-    fn layout(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-        regions: Regions,
-    ) -> SourceResult<Fragment> {
-        #[allow(clippy::too_many_arguments)]
-        #[comemo::memoize]
-        fn cached(
-            content: &Content,
-            world: Tracked<dyn World + '_>,
-            introspector: Tracked<Introspector>,
-            route: Tracked<Route>,
-            locator: Tracked<Locator>,
-            tracer: TrackedMut<Tracer>,
-            styles: StyleChain,
-            regions: Regions,
-        ) -> SourceResult<Fragment> {
-            let mut locator = Locator::chained(locator);
-            let mut engine = Engine {
-                world,
-                introspector,
-                route: Route::extend(route),
-                locator: &mut locator,
-                tracer,
-            };
+	fn layout(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+		regions: Regions,
+	) -> SourceResult<Fragment> {
+		#[allow(clippy::too_many_arguments)]
+		#[comemo::memoize]
+		fn cached(
+			content: &Content,
+			world: Tracked<dyn World + '_>,
+			introspector: Tracked<Introspector>,
+			route: Tracked<Route>,
+			locator: Tracked<Locator>,
+			tracer: TrackedMut<Tracer>,
+			styles: StyleChain,
+			regions: Regions,
+		) -> SourceResult<Fragment> {
+			let mut locator = Locator::chained(locator);
+			let mut engine = Engine {
+				world,
+				introspector,
+				route: Route::extend(route),
+				locator: &mut locator,
+				tracer,
+			};
 
-            if !engine.route.within(Route::MAX_LAYOUT_DEPTH) {
-                bail!(
-                    content.span(), "maximum layout depth exceeded";
-                    hint: "try to reduce the amount of nesting in your layout",
-                );
-            }
+			if !engine.route.within(Route::MAX_LAYOUT_DEPTH) {
+				bail!(
+					content.span(), "maximum layout depth exceeded";
+					hint: "try to reduce the amount of nesting in your layout",
+				);
+			}
 
-            let arenas = Arenas::default();
-            let (realized, styles) =
-                realize_block(&mut engine, &arenas, content, styles)?;
-            realized.with::<dyn LayoutMultiple>().unwrap().layout(
-                &mut engine,
-                styles,
-                regions,
-            )
-        }
+			let arenas = Arenas::default();
+			let (realized, styles) =
+				realize_block(&mut engine, &arenas, content, styles)?;
+			realized.with::<dyn LayoutMultiple>().unwrap().layout(
+				&mut engine,
+				styles,
+				regions,
+			)
+		}
 
-        let fragment = cached(
-            self,
-            engine.world,
-            engine.introspector,
-            engine.route.track(),
-            engine.locator.track(),
-            TrackedMut::reborrow_mut(&mut engine.tracer),
-            styles,
-            regions,
-        )?;
+		let fragment = cached(
+			self,
+			engine.world,
+			engine.introspector,
+			engine.route.track(),
+			engine.locator.track(),
+			TrackedMut::reborrow_mut(&mut engine.tracer),
+			styles,
+			regions,
+		)?;
 
-        engine.locator.visit_frames(&fragment);
-        Ok(fragment)
-    }
+		engine.locator.visit_frames(&fragment);
+		Ok(fragment)
+	}
 }

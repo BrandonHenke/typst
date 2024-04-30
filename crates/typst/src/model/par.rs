@@ -3,8 +3,8 @@ use std::fmt::{self, Debug, Formatter};
 use crate::diag::SourceResult;
 use crate::engine::Engine;
 use crate::foundations::{
-    elem, Args, Cast, Construct, Content, NativeElement, Packed, Set, Smart, StyleChain,
-    Unlabellable,
+	elem, Args, Cast, Construct, Content, NativeElement, Packed, Set, Smart, StyleChain,
+	Unlabellable,
 };
 use crate::layout::{Em, Fragment, Length, Size};
 
@@ -35,146 +35,165 @@ use crate::layout::{Em, Fragment, Length, Size};
 /// ```
 #[elem(title = "Paragraph", Debug, Construct)]
 pub struct ParElem {
-    /// The spacing between lines.
-    #[resolve]
-    #[ghost]
-    #[default(Em::new(0.65).into())]
-    pub leading: Length,
+	/// The spacing between lines.
+	#[resolve]
+	#[ghost]
+	#[default(Em::new(0.65).into())]
+	pub leading: Length,
 
-    /// Whether to justify text in its line.
-    ///
-    /// Hyphenation will be enabled for justified paragraphs if the
-    /// [text function's `hyphenate` property]($text.hyphenate) is set to
-    /// `{auto}` and the current language is known.
-    ///
-    /// Note that the current [alignment]($align.alignment) still has an effect
-    /// on the placement of the last line except if it ends with a
-    /// [justified line break]($linebreak.justify).
-    #[ghost]
-    #[default(false)]
-    pub justify: bool,
+	/// Whether to justify text in its line.
+	///
+	/// Hyphenation will be enabled for justified paragraphs if the
+	/// [text function's `hyphenate` property]($text.hyphenate) is set to
+	/// `{auto}` and the current language is known.
+	///
+	/// Note that the current [alignment]($align.alignment) still has an effect
+	/// on the placement of the last line except if it ends with a
+	/// [justified line break]($linebreak.justify).
+	#[ghost]
+	#[default(false)]
+	pub justify: bool,
 
-    /// How to determine line breaks.
-    ///
-    /// When this property is set to `{auto}`, its default value, optimized line
-    /// breaks will be used for justified paragraphs. Enabling optimized line
-    /// breaks for ragged paragraphs may also be worthwhile to improve the
-    /// appearance of the text.
-    ///
-    /// ```example
-    /// #set page(width: 207pt)
-    /// #set par(linebreaks: "simple")
-    /// Some texts feature many longer
-    /// words. Those are often exceedingly
-    /// challenging to break in a visually
-    /// pleasing way.
-    ///
-    /// #set par(linebreaks: "optimized")
-    /// Some texts feature many longer
-    /// words. Those are often exceedingly
-    /// challenging to break in a visually
-    /// pleasing way.
-    /// ```
-    #[ghost]
-    pub linebreaks: Smart<Linebreaks>,
+	/// How to determine line breaks.
+	///
+	/// When this property is set to `{auto}`, its default value, optimized line
+	/// breaks will be used for justified paragraphs. Enabling optimized line
+	/// breaks for ragged paragraphs may also be worthwhile to improve the
+	/// appearance of the text.
+	///
+	/// ```example
+	/// #set page(width: 207pt)
+	/// #set par(linebreaks: "simple")
+	/// Some texts feature many longer
+	/// words. Those are often exceedingly
+	/// challenging to break in a visually
+	/// pleasing way.
+	///
+	/// #set par(linebreaks: "optimized")
+	/// Some texts feature many longer
+	/// words. Those are often exceedingly
+	/// challenging to break in a visually
+	/// pleasing way.
+	/// ```
+	#[ghost]
+	pub linebreaks: Smart<Linebreaks>,
 
-    /// The indent the first line of a paragraph should have.
-    ///
-    /// Only the first line of a consecutive paragraph will be indented (not
-    /// the first one in a block or on the page).
-    ///
-    /// By typographic convention, paragraph breaks are indicated either by some
-    /// space between paragraphs or by indented first lines. Consider reducing
-    /// the [paragraph spacing]($block.spacing) to the [`leading`]($par.leading)
-    /// when using this property (e.g. using
-    /// `[#show par: set block(spacing: 0.65em)]`).
-    #[ghost]
-    pub first_line_indent: Length,
+	/// The indent the first line of a paragraph should have.
+	///
+	/// Only the first line of a consecutive paragraph will be indented (not
+	/// the first one in a block or on the page).
+	///
+	/// By typographic convention, paragraph breaks are indicated either by some
+	/// space between paragraphs or by indented first lines. Consider reducing
+	/// the [paragraph spacing]($block.spacing) to the [`leading`]($par.leading)
+	/// when using this property (e.g. using
+	/// `[#show par: set block(spacing: 0.65em)]`).
+	#[ghost]
+	pub first_line_indent: Length,
 
-    /// Whether or not the first line is always intented, or only when it is a consecutive paragraph
-    #[ghost]
-    #[default(false)]
-    pub always_indent_first_line: bool,
+	/// Whether or not the first line is always intented, or only when it is a consecutive paragraph
+	#[ghost]
+	#[default(false)]
+	pub always_indent_first_line: bool,
 
-    /// The indent all but the first line of a paragraph should have.
-    #[ghost]
-    #[resolve]
-    pub hanging_indent: Length,
+	/// The indent all but the first line of a paragraph should have.
+	#[ghost]
+	#[resolve]
+	pub hanging_indent: Length,
 
-    /// Indicates wheter an overflowing line should be shrunk.
-    ///
-    /// This property is set to `false` on raw blocks, because shrinking a line
-    /// could visually break the indentation.
-    #[ghost]
-    #[internal]
-    #[default(true)]
-    pub shrink: bool,
+	/// Indicates wheter an overflowing line should be shrunk.
+	///
+	/// This property is set to `false` on raw blocks, because shrinking a line
+	/// could visually break the indentation.
+	#[ghost]
+	#[internal]
+	#[default(true)]
+	pub shrink: bool,
 
-    /// The contents of the paragraph.
-    #[external]
-    #[required]
-    pub body: Content,
+	/// The contents of the paragraph.
+	#[external]
+	#[required]
+	pub body: Content,
 
-    /// The paragraph's children.
-    #[internal]
-    #[variadic]
-    pub children: Vec<Content>,
+	/// The paragraph's children.
+	#[internal]
+	#[variadic]
+	pub children: Vec<Content>,
 }
 
 impl Construct for ParElem {
-    fn construct(engine: &mut Engine, args: &mut Args) -> SourceResult<Content> {
-        // The paragraph constructor is special: It doesn't create a paragraph
-        // element. Instead, it just ensures that the passed content lives in a
-        // separate paragraph and styles it.
-        let styles = Self::set(engine, args)?;
-        let body = args.expect::<Content>("body")?;
-        Ok(Content::sequence([
-            ParbreakElem::new().pack(),
-            body.styled_with_map(styles),
-            ParbreakElem::new().pack(),
-        ]))
-    }
+	fn construct(engine: &mut Engine, args: &mut Args) -> SourceResult<Content> {
+		// The paragraph constructor is special: It doesn't create a paragraph
+		// element. Instead, it just ensures that the passed content lives in a
+		// separate paragraph and styles it.
+		let styles = Self::set(engine, args)?;
+		let body = args.expect::<Content>("body")?;
+		Ok(Content::sequence([
+			ParbreakElem::new().pack(),
+			body.styled_with_map(styles),
+			ParbreakElem::new().pack(),
+		]))
+	}
 }
 
 impl Packed<ParElem> {
-    /// Layout the paragraph into a collection of lines.
-    #[typst_macros::time(name = "par", span = self.span())]
-    pub fn layout(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-        consecutive: bool,
-        region: Size,
-        expand: bool,
-    ) -> SourceResult<Fragment> {
-        crate::layout::layout_inline(
-            self.children(),
-            engine,
-            styles,
-            consecutive,
-            region,
-            expand,
-        )
-    }
+	/// Layout the paragraph into a collection of lines.
+	#[typst_macros::time(name = "par", span = self.span())]
+	pub fn layout(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+		consecutive: bool,
+		region: Size,
+		expand: bool,
+	) -> SourceResult<Fragment> {
+
+		// Find block equations and lay them out individually.
+		let mut children = self.children().clone();
+		let mut subChildren = Vec::new();
+		let mut current = 0;
+		for child in children {
+			if child
+				.to_packed::<EquationElem>()
+				.is_some_and(|elem| elem.block(styles))
+			{
+				subChildren.push(children.split_off(current));
+				subChildren.push(children.split_off(1));
+				current = 0;
+				continue;
+			}
+			current+=1;
+		}
+		for sub in subChildren {
+			crate::layout::layout_inline(
+				self.children(),
+				engine,
+				styles,
+				consecutive,
+				region,
+				expand,
+			)
+		}
+	}
 }
 
 impl Debug for ParElem {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "Par ")?;
-        f.debug_list().entries(&self.children).finish()
-    }
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		write!(f, "Par ")?;
+		f.debug_list().entries(&self.children).finish()
+	}
 }
 
 /// How to determine line breaks in a paragraph.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Cast)]
 pub enum Linebreaks {
-    /// Determine the line breaks in a simple first-fit style.
-    Simple,
-    /// Optimize the line breaks for the whole paragraph.
-    ///
-    /// Typst will try to produce more evenly filled lines of text by
-    /// considering the whole paragraph when calculating line breaks.
-    Optimized,
+	/// Determine the line breaks in a simple first-fit style.
+	Simple,
+	/// Optimize the line breaks for the whole paragraph.
+	///
+	/// Typst will try to produce more evenly filled lines of text by
+	/// considering the whole paragraph when calculating line breaks.
+	Optimized,
 }
 
 /// A paragraph break.

@@ -426,8 +426,9 @@ impl<'a> ParBuilder<'a> {
             || content.is::<LinebreakElem>()
             || content.is::<SmartQuoteElem>()
             || content
-                .to_packed::<EquationElem>()
-                .is_some_and(|elem| !elem.block(styles))
+									 .is::<EquationElem>()
+                // .to_packed::<EquationElem>()
+                // .is_some_and(|elem| !elem.block(styles))
             || content.is::<BoxElem>()
         {
             self.0.push(content, styles);
