@@ -3,6 +3,8 @@ mod shaping;
 
 use std::println;
 
+use std::println;
+
 use comemo::{Tracked, TrackedMut};
 use unicode_bidi::{BidiInfo, Level as BidiLevel};
 use unicode_script::{Script, UnicodeScript};
