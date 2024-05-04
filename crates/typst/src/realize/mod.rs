@@ -26,7 +26,7 @@ use crate::layout::{
 use crate::math::{EquationElem, LayoutMath};
 use crate::model::{
 	CiteElem, CiteGroup, DocumentElem, EnumElem, EnumItem, ListElem, ListItem, InlineElem,
-	ParbreakElem, ParElem, TermItem, TermsElem,
+	ParbreakElem, TermItem, TermsElem,
 };
 use crate::syntax::Span;
 use crate::text::{LinebreakElem, SmartQuoteElem, SpaceElem, TextElem};
@@ -38,7 +38,16 @@ pub fn realize_root<'a>(
 	arenas: &'a Arenas<'a>,
 	content: &'a Content,
 	styles: StyleChain<'a>,
+	engine: &mut Engine,
+	arenas: &'a Arenas<'a>,
+	content: &'a Content,
+	styles: StyleChain<'a>,
 ) -> SourceResult<(Packed<DocumentElem>, StyleChain<'a>)> {
+	let mut builder = Builder::new(engine, arenas, true);
+	builder.accept(content, styles)?;
+	builder.interrupt_page(Some(styles), true)?;
+	let (doc, trunk) = builder.doc.unwrap().finish();
+	Ok((doc, trunk))
 	let mut builder = Builder::new(engine, arenas, true);
 	builder.accept(content, styles)?;
 	builder.interrupt_page(Some(styles), true)?;
@@ -49,6 +58,10 @@ pub fn realize_root<'a>(
 /// Realize into an element that is capable of block-level layout.
 #[typst_macros::time(name = "realize block")]
 pub fn realize_block<'a>(
+	engine: &mut Engine,
+	arenas: &'a Arenas<'a>,
+	content: &'a Content,
+	styles: StyleChain<'a>,
 	engine: &mut Engine,
 	arenas: &'a Arenas<'a>,
 	content: &'a Content,
@@ -67,6 +80,8 @@ pub fn realize_block<'a>(
 	builder.accept(content, styles)?;
 	builder.interrupt_inline()?;
 
+	let (flow, trunk) = builder.flow.finish();
+	Ok((Cow::Owned(flow.pack()), trunk))
 	let (flow, trunk) = builder.flow.finish();
 	Ok((Cow::Owned(flow.pack()), trunk))
 }
@@ -102,6 +117,17 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		}
 	}
 
+	fn accept(
+		&mut self,
+		mut content: &'a Content,
+		styles: StyleChain<'a>,
+	) -> SourceResult<()> {
+		println!("Accepting: {}", content.func().name());
+		if content.can::<dyn LayoutMath>() && !content.is::<EquationElem>() {
+			content = self
+				.arenas
+				.store(EquationElem::new(content.clone()).pack().spanned(content.span()));
+		}
 	fn accept(
 		&mut self,
 		mut content: &'a Content,
@@ -442,8 +468,8 @@ impl<'a> InlineBuilder<'a> {
 			|| content.is::<LinebreakElem>()
 			|| content.is::<SmartQuoteElem>()
 			|| content
-					.to_packed::<EquationElem>()
-					.is_some_and(|elem| !elem.block(styles))
+				.to_packed::<EquationElem>()
+				.is_some_and(|elem| !elem.block(styles))
 			|| content.is::<BoxElem>()
 		{
 			self.0.push(content, styles);
