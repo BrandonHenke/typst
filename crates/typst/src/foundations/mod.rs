@@ -65,9 +65,9 @@ pub use self::version::*;
 #[rustfmt::skip]
 #[doc(hidden)]
 pub use {
-    ecow::{eco_format, eco_vec},
-    indexmap::IndexMap,
-    once_cell::sync::Lazy,
+	ecow::{eco_format, eco_vec},
+	indexmap::IndexMap,
+	once_cell::sync::Lazy,
 };
 
 use ecow::EcoString;
@@ -86,33 +86,33 @@ pub static FOUNDATIONS: Category;
 
 /// Hook up all `foundations` definitions.
 pub(super) fn define(global: &mut Scope, inputs: Dict) {
-    global.category(FOUNDATIONS);
-    global.define_type::<bool>();
-    global.define_type::<i64>();
-    global.define_type::<f64>();
-    global.define_type::<Str>();
-    global.define_type::<Label>();
-    global.define_type::<Bytes>();
-    global.define_type::<Content>();
-    global.define_type::<Array>();
-    global.define_type::<Dict>();
-    global.define_type::<Func>();
-    global.define_type::<Args>();
-    global.define_type::<Type>();
-    global.define_type::<Module>();
-    global.define_type::<Regex>();
-    global.define_type::<Selector>();
-    global.define_type::<Datetime>();
-    global.define_type::<Duration>();
-    global.define_type::<Version>();
-    global.define_type::<Plugin>();
-    global.define_func::<repr::repr>();
-    global.define_func::<panic>();
-    global.define_func::<assert>();
-    global.define_func::<eval>();
-    global.define_func::<style>();
-    global.define_module(calc::module());
-    global.define_module(sys::module(inputs));
+	global.category(FOUNDATIONS);
+	global.define_type::<bool>();
+	global.define_type::<i64>();
+	global.define_type::<f64>();
+	global.define_type::<Str>();
+	global.define_type::<Label>();
+	global.define_type::<Bytes>();
+	global.define_type::<Content>();
+	global.define_type::<Array>();
+	global.define_type::<Dict>();
+	global.define_type::<Func>();
+	global.define_type::<Args>();
+	global.define_type::<Type>();
+	global.define_type::<Module>();
+	global.define_type::<Regex>();
+	global.define_type::<Selector>();
+	global.define_type::<Datetime>();
+	global.define_type::<Duration>();
+	global.define_type::<Version>();
+	global.define_type::<Plugin>();
+	global.define_func::<repr::repr>();
+	global.define_func::<panic>();
+	global.define_func::<assert>();
+	global.define_func::<eval>();
+	global.define_func::<style>();
+	global.define_module(calc::module());
+	global.define_module(sys::module(inputs));
 }
 
 /// Fails with an error.
@@ -127,21 +127,21 @@ pub(super) fn define(global: &mut Scope, inputs: Dict) {
 /// ```
 #[func(keywords = ["error"])]
 pub fn panic(
-    /// The values to panic with and display to the user.
-    #[variadic]
-    values: Vec<Value>,
+	/// The values to panic with and display to the user.
+	#[variadic]
+	values: Vec<Value>,
 ) -> StrResult<Never> {
-    let mut msg = EcoString::from("panicked");
-    if !values.is_empty() {
-        msg.push_str(" with: ");
-        for (i, value) in values.iter().enumerate() {
-            if i > 0 {
-                msg.push_str(", ");
-            }
-            msg.push_str(&value.repr());
-        }
-    }
-    Err(msg)
+	let mut msg = EcoString::from("panicked");
+	if !values.is_empty() {
+		msg.push_str(" with: ");
+		for (i, value) in values.iter().enumerate() {
+			if i > 0 {
+				msg.push_str(", ");
+			}
+			msg.push_str(&value.repr());
+		}
+	}
+	Err(msg)
 }
 
 /// Ensures that a condition is fulfilled.
@@ -158,89 +158,89 @@ pub fn panic(
 /// ```
 #[func(scope)]
 pub fn assert(
-    /// The condition that must be true for the assertion to pass.
-    condition: bool,
-    /// The error message when the assertion fails.
-    #[named]
-    message: Option<EcoString>,
+	/// The condition that must be true for the assertion to pass.
+	condition: bool,
+	/// The error message when the assertion fails.
+	#[named]
+	message: Option<EcoString>,
 ) -> StrResult<NoneValue> {
-    if !condition {
-        if let Some(message) = message {
-            bail!("assertion failed: {message}");
-        } else {
-            bail!("assertion failed");
-        }
-    }
-    Ok(NoneValue)
+	if !condition {
+		if let Some(message) = message {
+			bail!("assertion failed: {message}");
+		} else {
+			bail!("assertion failed");
+		}
+	}
+	Ok(NoneValue)
 }
 
 #[scope]
 impl assert {
-    /// Ensures that two values are equal.
-    ///
-    /// Fails with an error if the first value is not equal to the second. Does not
-    /// produce any output in the document.
-    ///
-    /// ```typ
-    /// #assert.eq(10, 10)
-    /// ```
-    #[func(title = "Assert Equal")]
-    pub fn eq(
-        /// The first value to compare.
-        left: Value,
-        /// The second value to compare.
-        right: Value,
-        /// An optional message to display on error instead of the representations
-        /// of the compared values.
-        #[named]
-        message: Option<EcoString>,
-    ) -> StrResult<NoneValue> {
-        if left != right {
-            if let Some(message) = message {
-                bail!("equality assertion failed: {message}");
-            } else {
-                bail!(
-                    "equality assertion failed: value {} was not equal to {}",
-                    left.repr(),
-                    right.repr()
-                );
-            }
-        }
-        Ok(NoneValue)
-    }
+	/// Ensures that two values are equal.
+	///
+	/// Fails with an error if the first value is not equal to the second. Does not
+	/// produce any output in the document.
+	///
+	/// ```typ
+	/// #assert.eq(10, 10)
+	/// ```
+	#[func(title = "Assert Equal")]
+	pub fn eq(
+		/// The first value to compare.
+		left: Value,
+		/// The second value to compare.
+		right: Value,
+		/// An optional message to display on error instead of the representations
+		/// of the compared values.
+		#[named]
+		message: Option<EcoString>,
+	) -> StrResult<NoneValue> {
+		if left != right {
+			if let Some(message) = message {
+				bail!("equality assertion failed: {message}");
+			} else {
+				bail!(
+					"equality assertion failed: value {} was not equal to {}",
+					left.repr(),
+					right.repr()
+				);
+			}
+		}
+		Ok(NoneValue)
+	}
 
-    /// Ensures that two values are not equal.
-    ///
-    /// Fails with an error if the first value is equal to the second. Does not
-    /// produce any output in the document.
-    ///
-    /// ```typ
-    /// #assert.ne(3, 4)
-    /// ```
-    #[func(title = "Assert Not Equal")]
-    pub fn ne(
-        /// The first value to compare.
-        left: Value,
-        /// The second value to compare.
-        right: Value,
-        /// An optional message to display on error instead of the representations
-        /// of the compared values.
-        #[named]
-        message: Option<EcoString>,
-    ) -> StrResult<NoneValue> {
-        if left == right {
-            if let Some(message) = message {
-                bail!("inequality assertion failed: {message}");
-            } else {
-                bail!(
-                    "inequality assertion failed: value {} was equal to {}",
-                    left.repr(),
-                    right.repr()
-                );
-            }
-        }
-        Ok(NoneValue)
-    }
+	/// Ensures that two values are not equal.
+	///
+	/// Fails with an error if the first value is equal to the second. Does not
+	/// produce any output in the document.
+	///
+	/// ```typ
+	/// #assert.ne(3, 4)
+	/// ```
+	#[func(title = "Assert Not Equal")]
+	pub fn ne(
+		/// The first value to compare.
+		left: Value,
+		/// The second value to compare.
+		right: Value,
+		/// An optional message to display on error instead of the representations
+		/// of the compared values.
+		#[named]
+		message: Option<EcoString>,
+	) -> StrResult<NoneValue> {
+		if left == right {
+			if let Some(message) = message {
+				bail!("inequality assertion failed: {message}");
+			} else {
+				bail!(
+					"inequality assertion failed: value {} was equal to {}",
+					left.repr(),
+					right.repr()
+				);
+			}
+		}
+		Ok(NoneValue)
+	}
 }
 
 /// Evaluates a string as Typst code.
@@ -255,42 +255,42 @@ impl assert {
 /// ```
 #[func(title = "Evaluate")]
 pub fn eval(
-    /// The engine.
-    engine: &mut Engine,
-    /// A string of Typst code to evaluate.
-    source: Spanned<String>,
-    /// The [syntactical mode]($reference/syntax/#modes) in which the string is
-    /// parsed.
-    ///
-    /// ```example
-    /// #eval("= Heading", mode: "markup")
-    /// #eval("1_2^3", mode: "math")
-    /// ```
-    #[named]
-    #[default(EvalMode::Code)]
-    mode: EvalMode,
-    /// A scope of definitions that are made available.
-    ///
-    /// ```example
-    /// #eval("x + 1", scope: (x: 2)) \
-    /// #eval(
-    ///   "abc/xyz",
-    ///   mode: "math",
-    ///   scope: (
-    ///     abc: $a + b + c$,
-    ///     xyz: $x + y + z$,
-    ///   ),
-    /// )
-    /// ```
-    #[named]
-    #[default]
-    scope: Dict,
+	/// The engine.
+	engine: &mut Engine,
+	/// A string of Typst code to evaluate.
+	source: Spanned<String>,
+	/// The [syntactical mode]($reference/syntax/#modes) in which the string is
+	/// parsed.
+	///
+	/// ```example
+	/// #eval("= Heading", mode: "markup")
+	/// #eval("1_2^3", mode: "math")
+	/// ```
+	#[named]
+	#[default(EvalMode::Code)]
+	mode: EvalMode,
+	/// A scope of definitions that are made available.
+	///
+	/// ```example
+	/// #eval("x + 1", scope: (x: 2)) \
+	/// #eval(
+	///   "abc/xyz",
+	///   mode: "math",
+	///   scope: (
+	///     abc: $a + b + c$,
+	///     xyz: $x + y + z$,
+	///   ),
+	/// )
+	/// ```
+	#[named]
+	#[default]
+	scope: Dict,
 ) -> SourceResult<Value> {
-    let Spanned { v: text, span } = source;
-    let dict = scope;
-    let mut scope = Scope::new();
-    for (key, value) in dict {
-        scope.define(key, value);
-    }
-    crate::eval::eval_string(engine.world, &text, span, mode, scope)
+	let Spanned { v: text, span } = source;
+	let dict = scope;
+	let mut scope = Scope::new();
+	for (key, value) in dict {
+		scope.define(key, value);
+	}
+	crate::eval::eval_string(engine.world, &text, span, mode, scope)
 }

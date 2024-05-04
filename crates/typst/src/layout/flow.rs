@@ -68,9 +68,9 @@ impl LayoutMultiple for Packed<FlowElem> {
 				{
 					layouter.finish_region(engine, true)?;
 				}
-			} else if let Some(elem) = child.to_packed::<ParElem>() {
-				println!("(ParElem)");
-				layouter.layout_par(engine, elem, styles)?;
+			} else if let Some(elem) = child.to_packed::<InlineElem>() {
+				println!("(inlineElem)");
+				layouter.layout_inline(engine, elem, styles)?;
 			} else if let Some(layoutable) = child.with::<dyn LayoutSingle>() {
 				println!("(LayoutSingle)");
 				layouter.layout_single(engine, layoutable, styles)?;
@@ -235,22 +235,20 @@ impl<'a> FlowLayouter<'a> {
 		)
 	}
 
-	/// Layout a paragraph.
-	fn layout_par(
+	/// Layout a inline content.
+	fn layout_inline(
 		&mut self,
 		engine: &mut Engine,
-		par: &Packed<ParElem>,
+		inline: &Packed<InlineElem>,
 		styles: StyleChain,
 	) -> SourceResult<()> {
 		let align = AlignElem::alignment_in(styles).resolve(styles);
-		let leading = ParElem::leading_in(styles);
-		let consecutive = self.last_was_par;
-		println!("Inside layout_par");
-		let lines = par
+		let leading = Inline::leading_in(styles);
+		println!("Inside layout_inline");
+		let lines = inline
 			.layout(
 				engine,
 				styles,
-				consecutive,
 				self.regions.base(),
 				self.regions.expand.x,
 			)?
@@ -292,7 +290,7 @@ impl<'a> FlowLayouter<'a> {
 			)?;
 		}
 
-		self.last_was_par = true;
+		self.last_was_par = false;
 		Ok(())
 	}
 

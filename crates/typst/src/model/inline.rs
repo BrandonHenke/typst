@@ -8,17 +8,16 @@ use crate::foundations::{
 };
 use crate::layout::{Em, Fragment, Length, Size};
 
-/// Arranges text, spacing and inline-level elements into a paragraph.
+/// Arranges text, spacing and inline-level elements into an inline element.
 ///
-/// Although this function is primarily used in set rules to affect paragraph
+/// Although this function is primarily used in set rules to affect inline element
 /// properties, it can also be used to explicitly render its argument onto a
-/// paragraph of its own.
+/// inline element of its own.
 ///
 /// # Example
 /// ```example
-/// #show par: set block(spacing: 0.65em)
-/// #set par(
-///   first-line-indent: 1em,
+/// #show inline: set block(spacing: 0.65em)
+/// #set inline(
 ///   justify: true,
 /// )
 ///
@@ -33,8 +32,8 @@ use crate::layout::{Em, Fragment, Length, Size};
 /// let $a$ be the smallest of the
 /// three integers. Then, we ...
 /// ```
-#[elem(title = "Paragraph", Debug, Construct)]
-pub struct ParElem {
+#[elem(title = "Inline", Debug, Construct)]
+pub struct InlineElem {
 	/// The spacing between lines.
 	#[resolve]
 	#[ghost]
@@ -78,29 +77,6 @@ pub struct ParElem {
 	#[ghost]
 	pub linebreaks: Smart<Linebreaks>,
 
-	/// The indent the first line of a paragraph should have.
-	///
-	/// Only the first line of a consecutive paragraph will be indented (not
-	/// the first one in a block or on the page).
-	///
-	/// By typographic convention, paragraph breaks are indicated either by some
-	/// space between paragraphs or by indented first lines. Consider reducing
-	/// the [paragraph spacing]($block.spacing) to the [`leading`]($par.leading)
-	/// when using this property (e.g. using
-	/// `[#show par: set block(spacing: 0.65em)]`).
-	#[ghost]
-	pub first_line_indent: Length,
-
-	/// Whether or not the first line is always intented, or only when it is a consecutive paragraph
-	#[ghost]
-	#[default(false)]
-	pub always_indent_first_line: bool,
-
-	/// The indent all but the first line of a paragraph should have.
-	#[ghost]
-	#[resolve]
-	pub hanging_indent: Length,
-
 	/// Indicates wheter an overflowing line should be shrunk.
 	///
 	/// This property is set to `false` on raw blocks, because shrinking a line
@@ -110,94 +86,64 @@ pub struct ParElem {
 	#[default(true)]
 	pub shrink: bool,
 
-	/// The paragraph's children.
+	/// The contents of the inline element.
+	#[external]
+	#[required]
+	pub body: Content,
+
+	/// The inline element's children.
 	#[internal]
 	#[variadic]
 	pub children: Vec<Content>,
 }
 
-impl Construct for ParElem {
+impl Construct for InlineElem {
 	fn construct(engine: &mut Engine, args: &mut Args) -> SourceResult<Content> {
-		// The paragraph constructor is special: It doesn't create a paragraph
+		// The inline constructor is special: It doesn't create an inline element
 		// element. Instead, it just ensures that the passed content lives in a
-		// separate paragraph and styles it.
+		// separate inline and styles it.
 		let styles = Self::set(engine, args)?;
 		let body = args.expect::<Content>("body")?;
-		Ok(Content::sequence([
-			ParbreakElem::new().pack(),
-			body.styled_with_map(styles),
-			ParbreakElem::new().pack(),
-		]))
+		Ok(body.styled_with_map(styles))
 	}
 }
 
-impl Packed<ParElem> {
-	/// Layout the paragraph into a collection of inline and block elements.
-	#[typst_macros::time(name = "par", span = self.span())]
+impl Packed<InlineElem> {
+	/// Layout the inline content into a collection of lines.
+	#[typst_macros::time(name = "inline", span = self.span())]
 	pub fn layout(
 		&self,
 		engine: &mut Engine,
 		styles: StyleChain,
+		consecutive: bool,
 		region: Size,
 		expand: bool,
 	) -> SourceResult<Fragment> {
-		let mut frames = Vec::new();
-		for (i,child) in self.children.iter().enumerate() {
-			if i == 0 && child.is::<InlineElem>() {
-				child.children.insert(0,HElem::new(self.first_line_indent))
-			}
-			let frameVec = child.layout(
-				self.children(),
-				engine,
-				styles,
-				region,
-				expand,
-			)
-			.into_frames();
-			frames.append(frameVec);
-		}
-		Fragment::frames(frames)
+		crate::layout::layout_inline(
+			self.children(),
+			engine,
+			styles,
+			region,
+			expand,
+		)
 	}
 }
 
-impl Debug for ParElem {
+impl Debug for InlineElem {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		write!(f, "Par ")?;
+		write!(f, "Inline ")?;
 		f.debug_list().entries(&self.children).finish()
 	}
 }
 
-/// How to determine line breaks in a paragraph.
+/// How to determine line breaks in an inline element.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Cast)]
 pub enum Linebreaks {
 	/// Determine the line breaks in a simple first-fit style.
 	Simple,
-	/// Optimize the line breaks for the whole paragraph.
+	/// Optimize the line breaks for the whole inline element.
 	///
 	/// Typst will try to produce more evenly filled lines of text by
-	/// considering the whole paragraph when calculating line breaks.
+	/// considering the whole inline element when calculating line breaks.
 	Optimized,
 }
-
-/// A paragraph break.
-///
-/// This starts a new paragraph. Especially useful when used within code like
-/// [for loops]($scripting/#loops). Multiple consecutive
-/// paragraph breaks collapse into a single one.
-///
-/// # Example
-/// ```example
-/// #for i in range(3) {
-///   [Blind text #i: ]
-///   lorem(5)
-///   parbreak()
-/// }
-/// ```
-///
-/// # Syntax
-/// Instead of calling this function, you can insert a blank line into your
-/// markup to create a paragraph break.
-#[elem(title = "Paragraph Break", Unlabellable)]
-pub struct ParbreakElem {}
-
-impl Unlabellable for Packed<ParbreakElem> {}

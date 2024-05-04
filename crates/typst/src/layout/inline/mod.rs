@@ -35,7 +35,6 @@ pub(crate) fn layout_inline(
 	children: &[Content],
 	engine: &mut Engine,
 	styles: StyleChain,
-	consecutive: bool,
 	region: Size,
 	expand: bool,
 ) -> SourceResult<Fragment> {
@@ -49,7 +48,6 @@ pub(crate) fn layout_inline(
 		locator: Tracked<Locator>,
 		tracer: TrackedMut<Tracer>,
 		styles: StyleChain,
-		consecutive: bool,
 		region: Size,
 		expand: bool,
 	) -> SourceResult<Fragment> {
@@ -64,7 +62,7 @@ pub(crate) fn layout_inline(
 
 		// Collect all text into one string for BiDi analysis.
 		let (text, segments, spans) =
-			collect(children, &mut engine, &styles, region, consecutive)?;
+			collect(children, &mut engine, &styles, region)?;
 
 		// Perform BiDi analysis and then prepare paragraph layout by building a
 		// representation on which we can do line breaking without layouting
@@ -87,7 +85,6 @@ pub(crate) fn layout_inline(
 		engine.locator.track(),
 		TrackedMut::reborrow_mut(&mut engine.tracer),
 		styles,
-		consecutive,
 		region,
 		expand,
 	)?;
@@ -411,32 +408,12 @@ fn collect<'a>(
 	engine: &mut Engine<'_>,
 	styles: &'a StyleChain<'a>,
 	region: Size,
-	consecutive: bool,
 ) -> SourceResult<(String, Vec<(Segment<'a>, StyleChain<'a>)>, SpanMapper)> {
 	let mut full = String::new();
 	let mut quoter = SmartQuoter::new();
 	let mut segments = Vec::with_capacity(2 + children.len());
 	let mut spans = SpanMapper::new();
 	let mut iter = children.iter().peekable();
-
-	let first_line_indent = ParElem::first_line_indent_in(*styles);
-	let always_indent_first_line = ParElem::always_indent_first_line_in(*styles);
-
-
-	if !first_line_indent.is_zero()
-		&& (consecutive || always_indent_first_line)
-		&& AlignElem::alignment_in(*styles).resolve(*styles).x
-			== TextElem::dir_in(*styles).start().into()
-	{
-		full.push(SPACING_REPLACE);
-		segments.push((Segment::Spacing(first_line_indent.into()), *styles));
-	}
-
-	let hang = ParElem::hanging_indent_in(*styles);
-	if !hang.is_zero() {
-		full.push(SPACING_REPLACE);
-		segments.push((Segment::Spacing((-hang).into()), *styles));
-	}
 
 	let outer_dir = TextElem::dir_in(*styles);
 

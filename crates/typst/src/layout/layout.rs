@@ -3,7 +3,7 @@ use comemo::Track;
 use crate::diag::SourceResult;
 use crate::engine::Engine;
 use crate::foundations::{
-    dict, elem, func, Content, Context, Func, NativeElement, Packed, StyleChain,
+	dict, elem, func, Content, Context, Func, NativeElement, Packed, StyleChain,
 };
 use crate::introspection::Locatable;
 use crate::layout::{Fragment, LayoutMultiple, Regions, Size};
@@ -47,47 +47,47 @@ use crate::syntax::Span;
 /// the page width or height is `auto`, respectively.
 #[func]
 pub fn layout(
-    /// The call span of this function.
-    span: Span,
-    /// A function to call with the outer container's size. Its return value is
-    /// displayed in the document.
-    ///
-    /// The container's size is given as a [dictionary] with the keys `width`
-    /// and `height`.
-    ///
-    /// This function is called once for each time the content returned by
-    /// `layout` appears in the document. That makes it possible to generate
-    /// content that depends on the size of the container it is inside of.
-    func: Func,
+	/// The call span of this function.
+	span: Span,
+	/// A function to call with the outer container's size. Its return value is
+	/// displayed in the document.
+	///
+	/// The container's size is given as a [dictionary] with the keys `width`
+	/// and `height`.
+	///
+	/// This function is called once for each time the content returned by
+	/// `layout` appears in the document. That makes it possible to generate
+	/// content that depends on the size of the container it is inside of.
+	func: Func,
 ) -> Content {
-    LayoutElem::new(func).pack().spanned(span)
+	LayoutElem::new(func).pack().spanned(span)
 }
 
 /// Executes a `layout` call.
 #[elem(Locatable, LayoutMultiple)]
 struct LayoutElem {
-    /// The function to call with the outer container's (or page's) size.
-    #[required]
-    func: Func,
+	/// The function to call with the outer container's (or page's) size.
+	#[required]
+	func: Func,
 }
 
 impl LayoutMultiple for Packed<LayoutElem> {
-    #[typst_macros::time(name = "layout", span = self.span())]
-    fn layout(
-        &self,
-        engine: &mut Engine,
-        styles: StyleChain,
-        regions: Regions,
-    ) -> SourceResult<Fragment> {
-        // Gets the current region's base size, which will be the size of the
-        // outer container, or of the page if there is no such container.
-        let Size { x, y } = regions.base();
-        let loc = self.location().unwrap();
-        let context = Context::new(Some(loc), Some(styles));
-        let result = self
-            .func()
-            .call(engine, context.track(), [dict! { "width" => x, "height" => y }])?
-            .display();
-        result.layout(engine, styles, regions)
-    }
+	#[typst_macros::time(name = "layout", span = self.span())]
+	fn layout(
+		&self,
+		engine: &mut Engine,
+		styles: StyleChain,
+		regions: Regions,
+	) -> SourceResult<Fragment> {
+		// Gets the current region's base size, which will be the size of the
+		// outer container, or of the page if there is no such container.
+		let Size { x, y } = regions.base();
+		let loc = self.location().unwrap();
+		let context = Context::new(Some(loc), Some(styles));
+		let result = self
+			.func()
+			.call(engine, context.track(), [dict! { "width" => x, "height" => y }])?
+			.display();
+		result.layout(engine, styles, regions)
+	}
 }
