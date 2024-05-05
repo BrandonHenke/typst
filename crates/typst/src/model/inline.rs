@@ -32,7 +32,7 @@ use crate::layout::{Em, Fragment, Length, Size};
 /// let $a$ be the smallest of the
 /// three integers. Then, we ...
 /// ```
-#[elem(title = "Inline", Debug, Construct)]
+#[elem(Debug, Construct)]
 pub struct InlineElem {
 	/// The spacing between lines.
 	#[resolve]
