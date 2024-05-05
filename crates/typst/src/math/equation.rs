@@ -16,7 +16,7 @@ use crate::layout::{
 use crate::math::{
 	scaled_font_size, LayoutMath, MathContext, MathRunFrameBuilder, MathSize, MathVariant,
 };
-use crate::model::{Numbering, Outlinable, ParElem, Refable, Supplement};
+use crate::model::{Numbering, Outlinable, InlineElem, Refable, Supplement};
 use crate::syntax::Span;
 use crate::text::{
 	families, variant, Font, FontFamily, FontList, FontWeight, LocalName, TextElem,
@@ -227,7 +227,7 @@ impl Packed<EquationElem> {
 			let MathParItem::Frame(frame) = item else { continue };
 
 			let font_size = scaled_font_size(&ctx, styles);
-			let slack = ParElem::leading_in(styles) * 0.7;
+			let slack = InlineElem::leading_in(styles) * 0.7;
 			let top_edge = TextElem::top_edge_in(styles).resolve(font_size, &font, None);
 			let bottom_edge =
 				-TextElem::bottom_edge_in(styles).resolve(font_size, &font, None);

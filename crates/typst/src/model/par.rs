@@ -1,4 +1,5 @@
 use std::fmt::{self, Debug, Formatter};
+use std::println;
 
 use crate::diag::SourceResult;
 use crate::engine::Engine;
@@ -6,7 +7,8 @@ use crate::foundations::{
 	elem, Args, Cast, Construct, Content, NativeElement, Packed, Set, Smart, StyleChain,
 	Unlabellable,
 };
-use crate::layout::{Em, Fragment, Length, Size};
+use crate::layout::{Em, Fragment, Length, Size, HElem, FlowElem, LayoutMultiple, Regions};
+use crate::model::{InlineElem};
 
 /// Arranges text, spacing and inline-level elements into a paragraph.
 ///
@@ -35,49 +37,6 @@ use crate::layout::{Em, Fragment, Length, Size};
 /// ```
 #[elem(title = "Paragraph", Debug, Construct)]
 pub struct ParElem {
-	/// The spacing between lines.
-	#[resolve]
-	#[ghost]
-	#[default(Em::new(0.65).into())]
-	pub leading: Length,
-
-	/// Whether to justify text in its line.
-	///
-	/// Hyphenation will be enabled for justified paragraphs if the
-	/// [text function's `hyphenate` property]($text.hyphenate) is set to
-	/// `{auto}` and the current language is known.
-	///
-	/// Note that the current [alignment]($align.alignment) still has an effect
-	/// on the placement of the last line except if it ends with a
-	/// [justified line break]($linebreak.justify).
-	#[ghost]
-	#[default(false)]
-	pub justify: bool,
-
-	/// How to determine line breaks.
-	///
-	/// When this property is set to `{auto}`, its default value, optimized line
-	/// breaks will be used for justified paragraphs. Enabling optimized line
-	/// breaks for ragged paragraphs may also be worthwhile to improve the
-	/// appearance of the text.
-	///
-	/// ```example
-	/// #set page(width: 207pt)
-	/// #set par(linebreaks: "simple")
-	/// Some texts feature many longer
-	/// words. Those are often exceedingly
-	/// challenging to break in a visually
-	/// pleasing way.
-	///
-	/// #set par(linebreaks: "optimized")
-	/// Some texts feature many longer
-	/// words. Those are often exceedingly
-	/// challenging to break in a visually
-	/// pleasing way.
-	/// ```
-	#[ghost]
-	pub linebreaks: Smart<Linebreaks>,
-
 	/// The indent the first line of a paragraph should have.
 	///
 	/// Only the first line of a consecutive paragraph will be indented (not
@@ -95,20 +54,6 @@ pub struct ParElem {
 	#[ghost]
 	#[default(false)]
 	pub always_indent_first_line: bool,
-
-	/// The indent all but the first line of a paragraph should have.
-	#[ghost]
-	#[resolve]
-	pub hanging_indent: Length,
-
-	/// Indicates wheter an overflowing line should be shrunk.
-	///
-	/// This property is set to `false` on raw blocks, because shrinking a line
-	/// could visually break the indentation.
-	#[ghost]
-	#[internal]
-	#[default(true)]
-	pub shrink: bool,
 
 	/// The paragraph's children.
 	#[internal]
@@ -131,32 +76,55 @@ impl Construct for ParElem {
 	}
 }
 
-impl Packed<ParElem> {
+impl LayoutMultiple for Packed<ParElem> {
 	/// Layout the paragraph into a collection of inline and block elements.
 	#[typst_macros::time(name = "par", span = self.span())]
-	pub fn layout(
+	fn layout(
 		&self,
 		engine: &mut Engine,
 		styles: StyleChain,
-		region: Size,
-		expand: bool,
+		regions: Regions,
 	) -> SourceResult<Fragment> {
-		let mut frames = Vec::new();
-		for (i,child) in self.children.iter().enumerate() {
-			if i == 0 && child.is::<InlineElem>() {
-				child.children.insert(0,HElem::new(self.first_line_indent))
-			}
-			let frameVec = child.layout(
-				self.children(),
-				engine,
-				styles,
-				region,
-				expand,
-			)
-			.into_frames();
-			frames.append(frameVec);
+		println!("We made it!");
+		// if consecutive || ParElem::always_indent_first_line_in(styles) {
+		if self.children[0].is::<InlineElem>() {
+			println!("InlineElem");
+			// self.children[0]
+			// 	.to_packed::<InlineElem>()
+			// 	.unwrap_or_default()
+			// 	.children
+			// 	.insert(0,HElem::new(ParElem::first_line_indent_in(styles).into()).into());
 		}
-		Fragment::frames(frames)
+		// }
+
+		let children = &self.children;
+		Packed::new(FlowElem::new(children.to_vec())).layout(engine, styles, regions)
+
+	// 	let mut frames = Vec::new(); 
+	// 	for (i,child) in self.children.into_iter().enumerate() {
+	// 		if i == 0 && consecutive {
+	// 			if let Some(elem) = child.to_packed::<InlineElem>() {
+	// 				let mut grandChildren = elem.children;
+	// 				grandChildren.insert(0,HElem::new(ParElem::first_line_indent_in(styles).into()).into());
+	// 			}
+	// 		}
+	// 		let frames = if let Some(layoutable) = child.with::<dyn LayoutSingle>() {
+	// 			child.layout(
+	// 				self.children(),
+	// 				engine,
+	// 				styles,
+	// 				region,
+	// 				expand,
+	// 			)
+	// 			.into_frames()
+	// 		} else if child.can::<dyn LayoutMultiple>() {
+	// 			child.layout(
+
+	// 			)
+	// 			.into_frames()
+	// 		};
+	// 	}
+		// Ok(Fragment::frames(frames))
 	}
 }
 
@@ -165,18 +133,6 @@ impl Debug for ParElem {
 		write!(f, "Par ")?;
 		f.debug_list().entries(&self.children).finish()
 	}
-}
-
-/// How to determine line breaks in a paragraph.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Cast)]
-pub enum Linebreaks {
-	/// Determine the line breaks in a simple first-fit style.
-	Simple,
-	/// Optimize the line breaks for the whole paragraph.
-	///
-	/// Typst will try to produce more evenly filled lines of text by
-	/// considering the whole paragraph when calculating line breaks.
-	Optimized,
 }
 
 /// A paragraph break.

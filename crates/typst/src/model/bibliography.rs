@@ -33,7 +33,7 @@ use crate::layout::{
 	TrackSizings, VElem,
 };
 use crate::model::{
-	CitationForm, CiteGroup, Destination, FootnoteElem, HeadingElem, LinkElem, ParElem,
+	CitationForm, CiteGroup, Destination, FootnoteElem, HeadingElem, LinkElem, InlineElem,
 };
 
 use crate::syntax::{Span, Spanned};
@@ -265,7 +265,7 @@ impl Show for Packed<BibliographyElem> {
 
 		let mut content = Content::sequence(seq);
 		if works.hanging_indent {
-			content = content.styled(ParElem::set_hanging_indent(INDENT.into()));
+			content = content.styled(InlineElem::set_hanging_indent(INDENT.into()));
 		}
 
 		Ok(content)

@@ -44,7 +44,7 @@ use crate::foundations::{
 };
 use crate::layout::Em;
 use crate::layout::{Abs, Axis, Dir, Length, Rel};
-use crate::model::ParElem;
+use crate::model::InlineElem;
 use crate::syntax::Spanned;
 use crate::visualize::{Color, Paint, RelativeTo, Stroke};
 use crate::World;
@@ -1009,7 +1009,7 @@ impl Resolve for Hyphenate {
 
     fn resolve(self, styles: StyleChain) -> Self::Output {
         match self.0 {
-            Smart::Auto => ParElem::justify_in(styles),
+            Smart::Auto => InlineElem::justify_in(styles),
             Smart::Custom(v) => v,
         }
     }

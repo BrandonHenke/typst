@@ -11,6 +11,7 @@ pub use self::process::{process, processable};
 use std::borrow::Cow;
 
 use std::mem;
+use std::println;
 
 use crate::diag::{bail, SourceResult};
 use crate::engine::{Engine, Route};
@@ -25,7 +26,7 @@ use crate::layout::{
 use crate::math::{EquationElem, LayoutMath};
 use crate::model::{
 	CiteElem, CiteGroup, DocumentElem, EnumElem, EnumItem, ListElem, ListItem, InlineElem,
-	ParbreakElem, TermItem, TermsElem,
+	ParbreakElem, ParElem, TermItem, TermsElem,
 };
 use crate::syntax::Span;
 use crate::text::{LinebreakElem, SmartQuoteElem, SpaceElem, TextElem};
@@ -53,12 +54,15 @@ pub fn realize_block<'a>(
 	content: &'a Content,
 	styles: StyleChain<'a>,
 ) -> SourceResult<(Cow<'a, Content>, StyleChain<'a>)> {
+
+	println!("Content Type: {}", content.func().name());
+
 	// These elements implement `Layout` but still require a flow for
 	// proper layout.
 	if content.can::<dyn LayoutMultiple>() && !processable(engine, content, styles) {
 		return Ok((Cow::Borrowed(content), styles));
 	}
-
+	
 	let mut builder = Builder::new(engine, arenas, false);
 	builder.accept(content, styles)?;
 	builder.interrupt_inline()?;
@@ -103,12 +107,12 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		mut content: &'a Content,
 		styles: StyleChain<'a>,
 	) -> SourceResult<()> {
+		println!("Accepting: {}", content.func().name());
 		if content.can::<dyn LayoutMath>() && !content.is::<EquationElem>() {
 			content = self
 				.arenas
 				.store(EquationElem::new(content.clone()).pack().spanned(content.span()));
 		}
-
 		if let Some(realized) = process(self.engine, content, styles)? {
 			self.engine.route.increase();
 			if !self.engine.route.within(Route::MAX_SHOW_RULE_DEPTH) {
@@ -117,12 +121,16 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 					hint: "check whether the show rule matches its own output"
 				);
 			}
+			println!("Processed");
+			println!("Going deeper:");
 			let result = self.accept(self.arenas.store(realized), styles);
+			println!("Coming up!");
 			self.engine.route.decrease();
 			return result;
 		}
 
 		if let Some(styled) = content.to_packed::<StyledElem>() {
+			println!("Styled!\n");
 			return self.styled(styled, styles);
 		}
 
@@ -134,28 +142,33 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		}
 
 		if self.cites.accept(content, styles) {
+			println!("Cites!\n");
 			return Ok(());
 		}
 
 		self.interrupt_cites()?;
 
 		if self.list.accept(content, styles) {
+			println!("List 1!\n");
 			return Ok(());
 		}
 
 		self.interrupt_list()?;
 
 		if self.list.accept(content, styles) {
+			println!("List 2!\n");
 			return Ok(());
 		}
 
 		if self.inline.accept(content, styles) {
+			println!("Inline!\n");
 			return Ok(());
 		}
 
 		self.interrupt_inline()?;
 
 		if self.flow.accept(self.arenas, content, styles) {
+			println!("Flow!\n");
 			return Ok(());
 		}
 
@@ -166,9 +179,12 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		self.interrupt_page(keep.then_some(styles), false)?;
 
 		if let Some(doc) = &mut self.doc {
+			println!("Doc!");
 			if doc.accept(self.arenas, content, styles) {
+				println!("Doc accepted!\n");
 				return Ok(());
 			}
+			println!("");
 		}
 
 		if content.is::<PagebreakElem>() {
@@ -420,7 +436,15 @@ impl<'a> InlineBuilder<'a> {
 				self.0.push(content, styles);
 				return true;
 			}
-		} else if content.is::<InlineElem>()
+		} else if content.is::<SpaceElem>()
+			|| content.is::<TextElem>()
+			|| content.is::<HElem>()
+			|| content.is::<LinebreakElem>()
+			|| content.is::<SmartQuoteElem>()
+			|| content
+					.to_packed::<EquationElem>()
+					.is_some_and(|elem| !elem.block(styles))
+			|| content.is::<BoxElem>()
 		{
 			self.0.push(content, styles);
 			return true;

@@ -9,7 +9,7 @@ use crate::foundations::{
 };
 use crate::introspection::{Count, Counter, CounterUpdate, Locatable, Location};
 use crate::layout::{Abs, Em, HElem, Length, Ratio};
-use crate::model::{Destination, Numbering, NumberingPattern, ParElem};
+use crate::model::{Destination, Numbering, NumberingPattern, InlineElem};
 use crate::text::{SuperElem, TextElem, TextSize};
 use crate::util::NonZeroExt;
 use crate::visualize::{LineElem, Stroke};
@@ -301,7 +301,7 @@ impl ShowSet for Packed<FootnoteEntry> {
         let text_size = Em::new(0.85);
         let leading = Em::new(0.5);
         let mut out = Styles::new();
-        out.set(ParElem::set_leading(leading.into()));
+        out.set(InlineElem::set_leading(leading.into()));
         out.set(TextElem::set_size(TextSize(text_size.into())));
         out
     }

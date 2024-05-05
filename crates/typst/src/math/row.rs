@@ -8,7 +8,7 @@ use crate::math::{
     alignments, scaled_font_size, spacing, EquationElem, FrameFragment, MathContext,
     MathFragment, MathParItem, MathSize,
 };
-use crate::model::ParElem;
+use crate::model::InlineElem;
 
 use super::fragment::SpacingFragment;
 
@@ -167,7 +167,7 @@ impl MathRun {
         let alignments = alignments(&rows);
 
         let leading = if EquationElem::size_in(styles) >= MathSize::Text {
-            ParElem::leading_in(styles)
+            InlineElem::leading_in(styles)
         } else {
             let font_size = scaled_font_size(ctx, styles);
             TIGHT_LEADING.at(font_size)
