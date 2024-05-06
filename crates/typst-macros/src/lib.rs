@@ -192,7 +192,7 @@ pub fn ty(stream: BoundaryStream, item: BoundaryStream) -> BoundaryStream {
 ///   this means that they *cannot* be accessed by the user, they cannot be set
 ///   on an individual instantiated element, and must be set via the style chain.
 ///   This is useful for fields that are only used internally by the style chain,
-///   such as the fields from `ParElem` and `TextElem`. If your element contains
+///   such as the fields from `InlineElem` and `TextElem`. If your element contains
 ///   any ghost fields, then you cannot auto-generate `Construct` for it, and
 ///   you must implement `Construct` manually.
 #[proc_macro_attribute]

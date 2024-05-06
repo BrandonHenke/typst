@@ -13,7 +13,7 @@ use crate::layout::{
 	Fragment, Frame, FrameItem, LayoutMultiple, LayoutSingle, PlaceElem, Point, Regions,
 	Rel, Size, Spacing, VElem,
 };
-use crate::model::{FootnoteElem, FootnoteEntry, ParElem};
+use crate::model::{FootnoteElem, FootnoteEntry, InlineElem, ParElem};
 use crate::util::Numeric;
 
 /// Arranges spacing, paragraphs and block-level elements into a flow.
@@ -243,7 +243,7 @@ impl<'a> FlowLayouter<'a> {
 		styles: StyleChain,
 	) -> SourceResult<()> {
 		let align = AlignElem::alignment_in(styles).resolve(styles);
-		let leading = Inline::leading_in(styles);
+		let leading = InlineElem::leading_in(styles);
 		println!("Inside layout_inline");
 		let lines = inline
 			.layout(

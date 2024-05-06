@@ -3,8 +3,6 @@ mod shaping;
 
 use std::println;
 
-use std::println;
-
 use comemo::{Tracked, TrackedMut};
 use unicode_bidi::{BidiInfo, Level as BidiLevel};
 use unicode_script::{Script, UnicodeScript};
@@ -24,7 +22,7 @@ use crate::layout::{
 	Point, Regions, Size, Sizing, Spacing,
 };
 use crate::math::{EquationElem, MathParItem};
-use crate::model::{Linebreaks, ParElem};
+use crate::model::{Linebreaks, InlineElem};
 use crate::syntax::Span;
 use crate::text::{
 	Lang, LinebreakElem, SmartQuoteElem, SmartQuoter, SmartQuotes, SpaceElem, TextElem,
@@ -75,7 +73,7 @@ pub(crate) fn layout_inline(
 		let lines = linebreak(&engine, &p, region.x - p.hang);
 
 		// Stack the lines into one frame per region.
-		let shrink = ParElem::shrink_in(styles);
+		let shrink = InlineElem::shrink_in(styles);
 		finalize(&mut engine, &p, &lines, region, expand, shrink)
 	}
 
@@ -626,12 +624,12 @@ fn prepare<'a>(
 		costs,
 		lang: shared_get(styles, children, TextElem::lang_in),
 		align: AlignElem::alignment_in(styles).resolve(styles).x,
-		justify: ParElem::justify_in(styles),
-		hang: ParElem::hanging_indent_in(styles),
+		justify: InlineElem::justify_in(styles),
+		hang: InlineElem::hanging_indent_in(styles),
 		cjk_latin_spacing,
 		fallback: TextElem::fallback_in(styles),
-		leading: ParElem::leading_in(styles),
-		linebreaks: ParElem::linebreaks_in(styles),
+		leading: InlineElem::leading_in(styles),
+		linebreaks: InlineElem::linebreaks_in(styles),
 		size: TextElem::size_in(styles),
 	})
 }
@@ -1178,7 +1176,8 @@ fn line<'a>(
 }
 
 /// Combine layouted lines into on
-		let breaks = Vec::
+fn finalize(
+	engine: &mut Engine,
 	p: &Preparation,
 	lines: &[Line],
 	region: Size,

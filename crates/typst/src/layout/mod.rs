@@ -50,6 +50,7 @@ pub use self::fragment::*;
 pub use self::frame::*;
 pub use self::grid::*;
 pub use self::hide::*;
+pub use self::inline::*;
 pub use self::layout_::*;
 pub use self::length::*;
 pub use self::measure_::*;
@@ -66,8 +67,6 @@ pub use self::size::*;
 pub use self::spacing::*;
 pub use self::stack::*;
 pub use self::transform::*;
-
-pub(crate) use self::inline::*;
 
 use comemo::{Tracked, TrackedMut};
 
