@@ -626,12 +626,12 @@ fn prepare<'a>(
 		costs,
 		lang: shared_get(styles, children, TextElem::lang_in),
 		align: AlignElem::alignment_in(styles).resolve(styles).x,
-		justify: InlineElem::justify_in(styles),
-		hang: InlineElem::hanging_indent_in(styles),
+		justify: ParElem::justify_in(styles),
+		hang: ParElem::hanging_indent_in(styles),
 		cjk_latin_spacing,
 		fallback: TextElem::fallback_in(styles),
-		leading: InlineElem::leading_in(styles),
-		linebreaks: InlineElem::linebreaks_in(styles),
+		leading: ParElem::leading_in(styles),
+		linebreaks: ParElem::linebreaks_in(styles),
 		size: TextElem::size_in(styles),
 	})
 }

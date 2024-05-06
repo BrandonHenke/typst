@@ -26,7 +26,7 @@ use crate::layout::{
 use crate::math::{EquationElem, LayoutMath};
 use crate::model::{
 	CiteElem, CiteGroup, DocumentElem, EnumElem, EnumItem, ListElem, ListItem, InlineElem,
-	ParbreakElem, ParElem, TermItem, TermsElem,
+	ParbreakElem, TermItem, TermsElem,
 };
 use crate::syntax::Span;
 use crate::text::{LinebreakElem, SmartQuoteElem, SpaceElem, TextElem};
@@ -117,6 +117,17 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		}
 	}
 
+	fn accept(
+		&mut self,
+		mut content: &'a Content,
+		styles: StyleChain<'a>,
+	) -> SourceResult<()> {
+		println!("Accepting: {}", content.func().name());
+		if content.can::<dyn LayoutMath>() && !content.is::<EquationElem>() {
+			content = self
+				.arenas
+				.store(EquationElem::new(content.clone()).pack().spanned(content.span()));
+		}
 	fn accept(
 		&mut self,
 		mut content: &'a Content,
