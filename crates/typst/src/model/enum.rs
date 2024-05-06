@@ -12,7 +12,7 @@ use crate::layout::{
     Alignment, Axes, BlockElem, Cell, CellGrid, Em, Fragment, GridLayouter, HAlignment,
     LayoutMultiple, Length, Regions, Sizing, Spacing, VAlignment,
 };
-use crate::model::{Numbering, NumberingPattern, ParElem};
+use crate::model::{Numbering, NumberingPattern, InlineElem};
 use crate::text::TextElem;
 
 /// A numbered list.
@@ -224,7 +224,7 @@ impl LayoutMultiple for Packed<EnumElem> {
         let indent = self.indent(styles);
         let body_indent = self.body_indent(styles);
         let gutter = if self.tight(styles) {
-            ParElem::leading_in(styles).into()
+            InlineElem::leading_in(styles).into()
         } else {
             self.spacing(styles)
                 .unwrap_or_else(|| *BlockElem::below_in(styles).amount())
