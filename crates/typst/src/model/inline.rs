@@ -53,11 +53,6 @@ pub struct InlineElem {
 	#[default(false)]
 	pub justify: bool,
 
-	/// The indent all but the first line of a paragraph should have.
-	#[ghost]
-	#[resolve]
-	pub hanging_indent: Length,
-
 	/// How to determine line breaks.
 	///
 	/// When this property is set to `{auto}`, its default value, optimized line
@@ -120,6 +115,7 @@ impl Packed<InlineElem> {
 		&self,
 		engine: &mut Engine,
 		styles: StyleChain,
+		consecutive: bool,
 		region: Size,
 		expand: bool,
 	) -> SourceResult<Fragment> {

@@ -13,7 +13,7 @@ use crate::layout::{
 	Fragment, Frame, FrameItem, LayoutMultiple, LayoutSingle, PlaceElem, Point, Regions,
 	Rel, Size, Spacing, VElem,
 };
-use crate::model::{FootnoteElem, FootnoteEntry, InlineElem};
+use crate::model::{FootnoteElem, FootnoteEntry, ParElem};
 use crate::util::Numeric;
 
 /// Arranges spacing, paragraphs and block-level elements into a flow.
@@ -53,13 +53,7 @@ impl LayoutMultiple for Packed<FlowElem> {
 				println!("(Styled)");
 			}
 
-			if let Some(layoutable) = child.with::<dyn LayoutSingle>() {
-				println!("(LayoutSingle)");
-				layouter.layout_single(engine, layoutable, styles)?;
-			} else if child.can::<dyn LayoutMultiple>() {
-				println!("(LayoutMultiple)");
-				layouter.layout_multiple(engine, child, styles)?;
-			}else if child.is::<MetaElem>() {
+			if child.is::<MetaElem>() {
 				println!("(Meta)");
 				layouter.layout_meta(styles);
 			} else if let Some(elem) = child.to_packed::<VElem>() {
@@ -77,6 +71,12 @@ impl LayoutMultiple for Packed<FlowElem> {
 			} else if let Some(elem) = child.to_packed::<InlineElem>() {
 				println!("(inlineElem)");
 				layouter.layout_inline(engine, elem, styles)?;
+			} else if let Some(layoutable) = child.with::<dyn LayoutSingle>() {
+				println!("(LayoutSingle)");
+				layouter.layout_single(engine, layoutable, styles)?;
+			} else if child.can::<dyn LayoutMultiple>() {
+				println!("(LayoutMultiple)");
+				layouter.layout_multiple(engine, child, styles)?;
 			} else {
 				bail!(child.span(), "unexpected flow child");
 			}
@@ -243,7 +243,7 @@ impl<'a> FlowLayouter<'a> {
 		styles: StyleChain,
 	) -> SourceResult<()> {
 		let align = AlignElem::alignment_in(styles).resolve(styles);
-		let leading = InlineElem::leading_in(styles);
+		let leading = Inline::leading_in(styles);
 		println!("Inside layout_inline");
 		let lines = inline
 			.layout(

@@ -10,7 +10,7 @@ use crate::layout::{
     Axes, BlockElem, Cell, CellGrid, Em, Fragment, GridLayouter, HAlignment,
     LayoutMultiple, Length, Regions, Sizing, Spacing, VAlignment,
 };
-use crate::model::InlineElem;
+use crate::model::ParElem;
 use crate::text::TextElem;
 
 /// A bullet list.
@@ -148,7 +148,7 @@ impl LayoutMultiple for Packed<ListElem> {
         let indent = self.indent(styles);
         let body_indent = self.body_indent(styles);
         let gutter = if self.tight(styles) {
-            InlineElem::leading_in(styles).into()
+            ParElem::leading_in(styles).into()
         } else {
             self.spacing(styles)
                 .unwrap_or_else(|| *BlockElem::below_in(styles).amount())

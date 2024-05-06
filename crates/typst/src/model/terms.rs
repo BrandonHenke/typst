@@ -7,7 +7,7 @@ use crate::layout::{
     BlockElem, Dir, Em, Fragment, HElem, LayoutMultiple, Length, Regions, Sides, Spacing,
     StackChild, StackElem,
 };
-use crate::model::InlineElem;
+use crate::model::ParElem;
 use crate::text::TextElem;
 use crate::util::Numeric;
 
@@ -121,7 +121,7 @@ impl LayoutMultiple for Packed<TermsElem> {
         let indent = self.indent(styles);
         let hanging_indent = self.hanging_indent(styles);
         let gutter = if self.tight(styles) {
-            InlineElem::leading_in(styles).into()
+            ParElem::leading_in(styles).into()
         } else {
             self.spacing(styles)
                 .unwrap_or_else(|| *BlockElem::below_in(styles).amount())

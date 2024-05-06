@@ -24,7 +24,7 @@ use crate::layout::{
 	Point, Regions, Size, Sizing, Spacing,
 };
 use crate::math::{EquationElem, MathParItem};
-use crate::model::{Linebreaks, InlineElem};
+use crate::model::{Linebreaks, ParElem};
 use crate::syntax::Span;
 use crate::text::{
 	Lang, LinebreakElem, SmartQuoteElem, SmartQuoter, SmartQuotes, SpaceElem, TextElem,
@@ -75,7 +75,7 @@ pub(crate) fn layout_inline(
 		let lines = linebreak(&engine, &p, region.x - p.hang);
 
 		// Stack the lines into one frame per region.
-		let shrink = InlineElem::shrink_in(styles);
+		let shrink = ParElem::shrink_in(styles);
 		finalize(&mut engine, &p, &lines, region, expand, shrink)
 	}
 
@@ -1178,8 +1178,7 @@ fn line<'a>(
 }
 
 /// Combine layouted lines into on
-fn finalize(
-	engine: &mut Engine,
+		let breaks = Vec::
 	p: &Preparation,
 	lines: &[Line],
 	region: Size,

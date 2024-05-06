@@ -17,7 +17,7 @@ use crate::foundations::{
     PlainText, Show, ShowSet, Smart, StyleChain, Styles, Synthesize, Value,
 };
 use crate::layout::{BlockElem, Em, HAlignment};
-use crate::model::{Figurable, InlineElem};
+use crate::model::{Figurable, ParElem};
 use crate::syntax::{split_newlines, LinkedNode, Span, Spanned};
 use crate::text::{
     FontFamily, FontList, Hyphenate, LinebreakElem, LocalName, SmartQuoteElem, TextElem,
@@ -449,7 +449,7 @@ impl ShowSet for Packed<RawElem> {
         out.set(TextElem::set_font(FontList(vec![FontFamily::new("DejaVu Sans Mono")])));
         out.set(SmartQuoteElem::set_enabled(false));
         if self.block(styles) {
-            out.set(InlineElem::set_shrink(false));
+            out.set(ParElem::set_shrink(false));
         }
         out
     }
