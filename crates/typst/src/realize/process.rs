@@ -68,7 +68,7 @@ pub fn process(
 			// Errors in show rules don't terminate compilation immediately. We
 			// just continue with empty content for them and show all errors
 			// together, if they remain by the end of the introspection loop.
-			//
+			
 			// This way, we can ignore errors that only occur in earlier
 			// iterations and also show more useful errors at once.
 			engine.delayed(|engine| show(engine, target, step, styles.chain(&map)))

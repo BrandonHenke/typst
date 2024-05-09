@@ -6,7 +6,7 @@ use crate::foundations::{
 	elem, Args, Cast, Construct, Content, NativeElement, Packed, Set, Smart, StyleChain,
 	Unlabellable,
 };
-use crate::layout::{Em, Fragment, Length, Size, HElem, LayoutMultiple, Regions};
+use crate::layout::{Em, Fragment, Length, Size, HElem, LayoutMultiple, Regions, FlowElem};
 use crate::model::InlineElem;
 
 /// Arranges text, spacing and inline-level elements into a paragraph.
@@ -36,25 +36,6 @@ use crate::model::InlineElem;
 /// ```
 #[elem(title = "Paragraph", Debug, Construct)]
 pub struct ParElem {
-	/// The spacing between lines.
-	#[resolve]
-	#[ghost]
-	#[default(Em::new(0.65).into())]
-	pub leading: Length,
-
-	/// Whether to justify text in its line.
-	///
-	/// Hyphenation will be enabled for justified paragraphs if the
-	/// [text function's `hyphenate` property]($text.hyphenate) is set to
-	/// `{auto}` and the current language is known.
-	///
-	/// Note that the current [alignment]($align.alignment) still has an effect
-	/// on the placement of the last line except if it ends with a
-	/// [justified line break]($linebreak.justify).
-	#[ghost]
-	#[default(false)]
-	pub justify: bool,
-
 	/// The indent the first line of a paragraph should have.
 	///
 	/// Only the first line of a consecutive paragraph will be indented (not
@@ -73,17 +54,7 @@ pub struct ParElem {
 	#[default(false)]
 	pub always_indent_first_line: bool,
 
-	/// Indicates wheter an overflowing line should be shrunk.
-	///
-	/// This property is set to `false` on raw blocks, because shrinking a line
-	/// could visually break the indentation.
-	#[ghost]
-	#[internal]
-	#[default(true)]
-	pub shrink: bool,
-
-	/// The paragraph's children.
-	#[internal]
+	/// The paragraph's flow child.
 	#[variadic]
 	pub children: Vec<Content>,
 }
@@ -94,14 +65,19 @@ impl Construct for ParElem {
 		// element. Instead, it just ensures that the passed content lives in a
 		// separate paragraph and styles it.
 		let styles = Self::set(engine, args)?;
-		let body = args.expect::<Content>("body")?;
-		Ok(Content::sequence([
-			ParbreakElem::new().pack(),
-			body.styled_with_map(styles),
-			ParbreakElem::new().pack(),
-		]))
+		let children = vec![ParbreakElem::new().pack(),ParbreakElem::new().pack()];
+		Ok(Content::sequence(children))
 	}
 }
+
+// impl ParElem {
+// 	fn push(&mut self, elem: Content) -> Self {
+// 		let parbreak = self.children.pop();
+// 		self.children.push(elem);
+// 		self.children.push(parbreak)
+// 	}
+// }
+
 
 impl LayoutMultiple for Packed<ParElem> {
 	/// Layout the paragraph into a collection of inline and block elements.
@@ -112,7 +88,25 @@ impl LayoutMultiple for Packed<ParElem> {
 		styles: StyleChain,
 		regions: Regions,
 	) -> SourceResult<Fragment> {
+		println!("We made it.");
 		let mut frames = Vec::new();
+		// if let Some(mut child) = self.children[1].to_packed::<InlineElem>() {
+		// 	// println!("This is a {}", child.unpack().name());
+		// 	child
+		// 		.children
+		// 		.insert(
+		// 			0,
+		// 			HElem::new(
+		// 				ParElem::first_line_indent_in(styles)
+		// 				.into()
+		// 			)
+		// 			.into()
+		// 		);
+		// }
+		
+		// for mut child in self.children().iter() {
+
+		// }
 		// for (i,child) in self.children.iter().enumerate() {
 		// 	if i == 0 && child.is::<InlineElem>() {
 		// 		child.children.insert(0,HElem::new(self.first_line_indent))

@@ -41,7 +41,6 @@ impl LayoutMultiple for Packed<FlowElem> {
 		if !regions.size.y.is_finite() && regions.expand.y {
 			bail!(self.span(), "cannot expand into infinite height");
 		}
-
 		let mut layouter = FlowLayouter::new(regions, styles);
 		for mut child in self.children().iter() {
 			println!("CHILD! :D");
@@ -69,7 +68,7 @@ impl LayoutMultiple for Packed<FlowElem> {
 					layouter.finish_region(engine, true)?;
 				}
 			} else if let Some(elem) = child.to_packed::<InlineElem>() {
-				println!("(inlineElem)");
+				println!("(ParElem)");
 				layouter.layout_inline(engine, elem, styles)?;
 			} else if let Some(layoutable) = child.with::<dyn LayoutSingle>() {
 				println!("(LayoutSingle)");
@@ -289,10 +288,66 @@ impl<'a> FlowLayouter<'a> {
 				FlowItem::Frame { frame, align, sticky: false, movable: true },
 			)?;
 		}
-
-		self.last_was_par = false;
 		Ok(())
 	}
+
+	// /// Layout paragraph content.
+	// fn layout_inline(
+	// 	&mut self,
+	// 	engine: &mut Engine,
+	// 	inline: &Packed<InlineElem>,
+	// 	styles: StyleChain,
+	// ) -> SourceResult<()> {
+	// 	let align = AlignElem::alignment_in(styles).resolve(styles);
+	// 	let leading = InlineElem::leading_in(styles);
+	// 	println!("Inside layout_inline");
+	// 	let lines = inline
+	// 		.layout(
+	// 			engine,
+	// 			styles,
+	// 			self.regions.base(),
+	// 			self.regions.expand.x,
+	// 		)?
+	// 		.into_frames();
+
+	// 	if let Some(first) = lines.first() {
+	// 		while !self.regions.size.y.fits(first.height()) && !self.regions.in_last() {
+	// 			let mut sticky = self.items.len();
+	// 			for (i, item) in self.items.iter().enumerate().rev() {
+	// 				match *item {
+	// 					FlowItem::Absolute(_, _) => {}
+	// 					FlowItem::Frame { sticky: true, .. } => sticky = i,
+	// 					_ => break,
+	// 				}
+	// 			}
+
+	// 			let carry: Vec<_> = self.items.drain(sticky..).collect();
+	// 			self.finish_region(engine, false)?;
+	// 			let in_last = self.regions.in_last();
+
+	// 			for item in carry {
+	// 				self.layout_item(engine, item)?;
+	// 			}
+
+	// 			if in_last {
+	// 				break;
+	// 			}
+	// 		}
+	// 	}
+
+	// 	for (i, frame) in lines.into_iter().enumerate() {
+	// 		if i > 0 {
+	// 			self.layout_item(engine, FlowItem::Absolute(leading, true))?;
+	// 		}
+
+	// 		self.layout_item(
+	// 			engine,
+	// 			FlowItem::Frame { frame, align, sticky: false, movable: true },
+	// 		)?;
+	// 	}
+	// 	Ok(())
+	// }
+	
 
 	/// Layout into a single region.
 	fn layout_single(

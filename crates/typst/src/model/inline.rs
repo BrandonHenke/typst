@@ -50,9 +50,9 @@ pub struct InlineElem {
 	/// on the placement of the last line except if it ends with a
 	/// [justified line break]($linebreak.justify).
 	#[ghost]
-	#[default(false)]
+	#[default(true)]
 	pub justify: bool,
-	
+
 	/// The indent all but the first line of a paragraph should have.
 	#[ghost]
 	#[resolve]

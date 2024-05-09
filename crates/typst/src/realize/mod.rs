@@ -25,7 +25,7 @@ use crate::layout::{
 use crate::math::{EquationElem, LayoutMath};
 use crate::model::{
 	CiteElem, CiteGroup, DocumentElem, EnumElem, EnumItem, ListElem, ListItem, InlineElem,
-	ParbreakElem, TermItem, TermsElem,
+	ParbreakElem, ParElem, TermItem, TermsElem,
 };
 use crate::syntax::Span;
 use crate::text::{LinebreakElem, SmartQuoteElem, SpaceElem, TextElem};
@@ -38,6 +38,7 @@ pub fn realize_root<'a>(
 	content: &'a Content,
 	styles: StyleChain<'a>,
 ) -> SourceResult<(Packed<DocumentElem>, StyleChain<'a>)> {
+	println!("realize_root");
 	let mut builder = Builder::new(engine, arenas, true);
 	builder.accept(content, styles)?;
 	builder.interrupt_page(Some(styles), true)?;
@@ -53,12 +54,12 @@ pub fn realize_block<'a>(
 	content: &'a Content,
 	styles: StyleChain<'a>,
 ) -> SourceResult<(Cow<'a, Content>, StyleChain<'a>)> {
+	println!("realize_block");
 	// These elements implement `Layout` but still require a flow for
 	// proper layout.
 	if content.can::<dyn LayoutMultiple>() && !processable(engine, content, styles) {
 		return Ok((Cow::Borrowed(content), styles));
 	}
-
 	let mut builder = Builder::new(engine, arenas, false);
 	builder.accept(content, styles)?;
 	builder.interrupt_inline()?;
@@ -77,8 +78,10 @@ struct Builder<'a, 'v, 't> {
 	doc: Option<DocBuilder<'a>>,
 	/// The current flow building state.
 	flow: FlowBuilder<'a>,
-	/// The current paragraph building state.
+	/// The current inline building state.
 	inline: InlineBuilder<'a>,
+	/// The current par building state.
+	par: ParBuilder<'a>,
 	/// The current list building state.
 	list: ListBuilder<'a>,
 	/// The current citation grouping state.
@@ -93,6 +96,7 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 			doc: top.then(DocBuilder::default),
 			flow: FlowBuilder::default(),
 			inline: InlineBuilder::default(),
+			par: ParBuilder::default(),
 			list: ListBuilder::default(),
 			cites: CiteGroupBuilder::default(),
 		}
@@ -103,11 +107,14 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		mut content: &'a Content,
 		styles: StyleChain<'a>,
 	) -> SourceResult<()> {
-		println!("Accepting: {}", content.func().name());
 		if content.can::<dyn LayoutMath>() && !content.is::<EquationElem>() {
 			content = self
 				.arenas
-				.store(EquationElem::new(content.clone()).pack().spanned(content.span()));
+				.store(
+					EquationElem::new(content.clone())
+					.pack()
+					.spanned(content.span())
+				);
 		}
 		if let Some(realized) = process(self.engine, content, styles)? {
 			self.engine.route.increase();
@@ -154,6 +161,15 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		}
 
 		self.interrupt_inline()?;
+
+		if self.par.accept(content, styles) {
+			println!("Par accepted");
+			return Ok(());
+		} else {
+			println!("Par not accepted");
+		}
+
+		self.interrupt_par()?;
 
 		if self.flow.accept(self.arenas, content, styles) {
 			return Ok(());
@@ -262,6 +278,16 @@ impl<'a, 'v, 't> Builder<'a, 'v, 't> {
 		Ok(())
 	}
 
+	fn interrupt_par(&mut self) -> SourceResult<()> {
+		self.interrupt_inline()?;
+		if !self.par.0.is_empty() {
+			let (par, styles) = mem::take(&mut self.par).finish();
+			self.accept(self.arenas.store(par.pack()), styles)?;
+		}
+
+		Ok(())
+	}
+
 	fn interrupt_page(
 		&mut self,
 		styles: Option<StyleChain<'a>>,
@@ -325,6 +351,7 @@ impl<'a> DocBuilder<'a> {
 	}
 
 	fn finish(self) -> (Packed<DocumentElem>, StyleChain<'a>) {
+		println!("Finishing doc...");
 		let (children, trunk, span) = self.pages.finish();
 		(Packed::new(DocumentElem::new(children)).spanned(span), trunk)
 	}
@@ -370,7 +397,7 @@ impl<'a> FlowBuilder<'a> {
 
 		if content.can::<dyn LayoutSingle>()
 			|| content.can::<dyn LayoutMultiple>()
-			|| content.is::<InlineElem>()
+			|| content.is::<ParElem>()
 		{
 			let is_tight_list = if let Some(elem) = content.to_packed::<ListElem>() {
 				elem.tight(styles)
@@ -404,6 +431,7 @@ impl<'a> FlowBuilder<'a> {
 	}
 
 	fn finish(self) -> (Packed<FlowElem>, StyleChain<'a>) {
+		println!("Finishing flow...");
 		let (children, trunk, span) = self.0.finish();
 		(Packed::new(FlowElem::new(children)).spanned(span), trunk)
 	}
@@ -437,8 +465,36 @@ impl<'a> InlineBuilder<'a> {
 	}
 
 	fn finish(self) -> (Packed<InlineElem>, StyleChain<'a>) {
+		println!("Finishing inline...");
 		let (children, trunk, span) = self.0.finish();
 		(Packed::new(InlineElem::new(children)).spanned(span), trunk)
+	}
+}
+
+/// Accepts inline content.
+#[derive(Default)]
+struct ParBuilder<'a>(BehavedBuilder<'a>);
+
+impl<'a> ParBuilder<'a> {
+	fn accept(&mut self, content: &'a Content, styles: StyleChain<'a>) -> bool {
+		if content.is::<MetaElem>() {
+			if !self.0.is_empty() {
+				self.0.push(content, styles);
+				return true;
+			}
+		} else if content.is::<InlineElem>()
+			|| content.is::<BlockElem>()
+		{
+			self.0.push(content, styles);
+			return true;
+		}
+		false
+	}
+
+	fn finish(self) -> (Packed<ParElem>, StyleChain<'a>) {
+		println!("Finishing par...");
+		let (children, trunk, span) = self.0.finish();
+		(Packed::new(ParElem::new(children)).spanned(span), trunk)
 	}
 }
 
@@ -479,6 +535,7 @@ impl<'a> ListBuilder<'a> {
 	}
 
 	fn finish(self) -> (Content, StyleChain<'a>) {
+		println!("Finishing list...");
 		let (items, trunk, span) = self.items.finish_iter();
 		let mut items = items.peekable();
 		let (first, _) = items.peek().unwrap();
@@ -577,6 +634,7 @@ impl<'a> CiteGroupBuilder<'a> {
 	}
 
 	fn finish(self) -> (Packed<CiteGroup>, StyleChain<'a>) {
+		println!("Finishing cite...");
 		let span = self.items.first().map(|cite| cite.span()).unwrap_or(Span::detached());
 		(Packed::new(CiteGroup::new(self.items)).spanned(span), self.styles)
 	}
